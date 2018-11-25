@@ -1,0 +1,215 @@
+#include<stdio.h>
+#include<graphics.h>
+#include<time.h>
+#include<stdlib.h>
+#include<mmsystem.h>
+#pragma comment(lib,"winmm.lib")
+void drowMap(int map[][10], IMAGE imag[]);
+void playgame(int map[][10]);
+int win(int map[][10]);
+
+int main(void)
+{
+	//加载音乐
+	mciSendString("open 1.mp3", 0, 0, 0);
+	mciSendString("play 1.mp3", 0, 0, 0);
+	int m = 1;
+	//地图
+	int map[10][10];
+	for (int i = 0; i < 10; i++)
+	{
+		for (int j = 0; j < 10; j++)
+		{
+			map[i][j] = 0;
+		}
+	}
+
+	//布雷
+	int x, y;
+	srand((unsigned)time(NULL));
+	for (int i = 0; i < 5;)
+	{
+		x = rand() % 10;
+		y = rand() % 10;
+		if (map[x][y] != -1)
+		{
+			++i;
+			map[x][y] = -1;
+			for (int row = x - 1; row <= x + 1; ++row)
+			{
+				for (int col = y - 1; col <= y + 1; ++col)
+				{
+					if (row >= 0 && row <10 && col >= 0 && col <10 && map[row][col] != -1)
+					{
+						map[row][col]++;
+					}
+				}
+			}
+		}
+	}
+
+
+	//图形库
+	initgraph(64 * 10, 64 * 10);
+	IMAGE imag[13];
+	char picName[8];
+	for (int i = 0; i < 9; i++)
+	{
+		sprintf(picName, "res/%d.jpg", i);
+		loadimage(&imag[i], picName, 64, 64);
+	}
+	loadimage(&imag[9], "res/flag.jpg", 64, 64);
+	loadimage(&imag[10], "res/space.jpg", 64, 64);
+	loadimage(&imag[11], "res/normalmine.jpg", 64, 64);
+	loadimage(&imag[12], "res/stone.jpg", 64, 64);
+
+	//打印地图
+	for (int i = 0; i < 10; i++)
+	{
+		for (int j = 0; j < 10; j++)
+		{
+			printf("\t%d", map[i][j]);
+		}
+		printf("\n");
+	}
+	while (1)
+	{
+		drowMap(map, imag);
+		playgame(map);
+		if (win(map) != 0)
+			break;
+	}
+	if (win(map) == 1)
+	{
+		MessageBox(GetHWnd(), "帅哥好棒啊", "Super j", MB_OK);
+	}
+	else
+	{
+		MessageBox(GetHWnd(), "瘪犊子你踩雷了", "Suoer j", MB_YESNO);
+	}
+
+	getchar();
+	closegraph();
+	return 0;
+}
+
+//画图
+void drowMap(int map[][10], IMAGE imag[])
+{
+	for (int i = 0; i < 10; i++)
+	{
+		for (int j = 0; j < 10; j++)
+		{
+			if (map[i][j] >9&&map[i][j]<18)
+			{
+				putimage(j * 64, i * 64, &imag[map[i][j] - 10]);
+			}
+			else if (map[i][j]==9)
+				putimage(j * 64, i * 64, &imag[11]);
+			else 
+				putimage(j * 64, i * 64, &imag[12]);
+			if (map[i][j]>=19 && map[i][j] < 29)
+			{
+				putimage(j * 64, i * 64, &imag[9]);
+				
+			}
+
+
+			/*switch (map[i][j])
+			{
+			case -1:putimage(j * 64, i * 64, &imag[11]);
+				break;
+			case 0:putimage(j * 64, i * 64, &imag[10]);
+				break;
+			case 1:putimage(j * 64, i * 64, &imag[1]);
+				break;
+			case 2:putimage(j * 64, i * 64, &imag[2]);
+				break;
+			case 3:putimage(j * 64, i * 64, &imag[3]);
+				break;
+			case 4:putimage(j * 64, i * 64, &imag[4]);
+				break;*/
+
+			}
+		}
+	}
+
+
+//鼠标
+void playgame(int map[][10])
+{
+	MOUSEMSG msg;
+	int i, j;
+	while (1)
+	{
+		msg = GetMouseMsg();
+		switch (msg.uMsg)
+		{
+			
+		case WM_LBUTTONDOWN:
+			i = msg.y / 64;
+			j = msg.x / 64;
+			if (map[i][j] == 0)
+			{
+				for (int m= i - 1; m <=i + 1; m++)
+				{
+					for (int n = j - 1; n <=j + 1; n++)
+					{
+						if (m>=0&&m<10&&n>=0&&n<10&&map[m][n]<9)
+						map[m][n] += 10;
+					}
+				}
+			}
+			else if  (map[i][j] < 9 && map[i][j] >= -1)
+			{
+				map[i][j] += 10;
+			}
+
+			return;
+			break;
+		case WM_RBUTTONDOWN:
+			i = msg.y / 64;
+			j = msg.x / 64;
+			
+				if (map[i][j] >= -1 && map[i][j] < 9)
+
+
+				{
+					map[i][j] += 20;
+					
+				}
+			
+				else
+					map[i][j] -= 20;
+			
+			return;
+			break;
+		}
+	}
+}
+
+//判断输赢
+int win(int map[][10])
+{
+	int num = 0;
+	for (int i = 0; i < 10; i++)
+	{
+		for (int j = 0; j < 10; j++)
+		{
+			if (map[i][j] == 9)
+				return -1;
+			if (map[i][j] >= 0 && map[i][j] < 9)
+			{
+				num++;
+				
+			}
+		}
+	}
+	if (num == 0)
+	{
+		return 1;
+	}
+////	else
+		return 0;
+}
+
